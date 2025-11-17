@@ -5,14 +5,44 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIU
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Table names with new app_id
+/**
+ * Check if the current user is an admin
+ * Based on RLS policies: (auth.jwt() ->> 'role'::text) = 'admin'::text
+ */
+export async function isAdmin(): Promise<boolean> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return false;
+    
+    const role = session.user?.user_metadata?.role || session.user?.app_metadata?.role;
+    return role === 'admin';
+  } catch (error) {
+    console.error('Error checking admin status:', error);
+    return false;
+  }
+}
+
+/**
+ * Get current user ID safely
+ */
+export async function getCurrentUserId(): Promise<string | null> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.user?.id || null;
+  } catch (error) {
+    console.error('Error getting user ID:', error);
+    return null;
+  }
+}
+
+// Table names matching database schema
 export const TABLES = {
-  ACTIVITY: 'app_9b4a9adf9b_activity',
-  CATEGORY: 'app_9b4a9adf9b_category',
-  ACTIVITY_TYPE: 'app_9b4a9adf9b_activity_type',
-  PRODUCT: 'app_9b4a9adf9b_product',
-  CART: 'app_9b4a9adf9b_cart',
-  FAVORITES: 'app_9b4a9adf9b_favorites',
+  ACTIVITY: 'app_activity',
+  CATEGORY: 'app_category',
+  ACTIVITY_TYPE: 'app_activity_type',
+  PRODUCT: 'app_product',
+  CART: 'app_cart',
+  FAVORITES: 'app_favorites',
 };
 
 // Types

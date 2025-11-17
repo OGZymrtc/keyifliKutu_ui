@@ -95,17 +95,28 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const parsed: LocalCartItem[] = JSON.parse(localCart);
       for (const item of parsed) {
-        await supabase.from(TABLES.CART).upsert({
-          user_id: user.id,
+        // Security: RLS policy ensures user_id matches auth.uid()
+        const { error } = await supabase.from(TABLES.CART).upsert({
+          user_id: user.id, // RLS policy will verify this matches auth.uid()
           product_id: item.product_id,
           quantity: item.quantity,
         }, { onConflict: 'user_id,product_id' });
+        
+        if (error) {
+          // Check if error is due to RLS policy violation
+          if (error.message.includes('policy') || error.message.includes('permission')) {
+            console.error('Permission denied while syncing cart:', error);
+            continue; // Skip this item and continue with others
+          }
+          throw error;
+        }
       }
       localStorage.removeItem(CART_STORAGE_KEY);
       await loadCart();
       toast.success('Cart synced successfully');
     } catch (error) {
       console.error('Error syncing cart:', error);
+      toast.error('Failed to sync cart');
     }
   };
 
@@ -144,6 +155,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
+      // Security: Ensure user_id matches authenticated user (RLS policy enforces this, but extra check for safety)
       const existingItem = cartItems.find((item) => item.product_id === productId);
 
       if (existingItem) {
@@ -151,12 +163,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await updateQuantity(productId, newQuantity);
       } else {
         const { error } = await supabase.from(TABLES.CART).insert({
-          user_id: user.id,
+          user_id: user.id, // RLS policy will verify this matches auth.uid()
           product_id: productId,
           quantity,
         });
 
-        if (error) throw error;
+        if (error) {
+          // Check if error is due to RLS policy violation
+          if (error.message.includes('policy') || error.message.includes('permission')) {
+            toast.error('You do not have permission to perform this action');
+            return;
+          }
+          throw error;
+        }
         await loadCart();
         toast.success('Added to cart');
       }
@@ -188,13 +207,21 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
+      // Security: RLS policy ensures user can only update their own cart
       const { error } = await supabase
         .from(TABLES.CART)
         .update({ quantity })
-        .eq('user_id', user.id)
+        .eq('user_id', user.id) // RLS policy will verify this matches auth.uid()
         .eq('product_id', productId);
 
-      if (error) throw error;
+      if (error) {
+        // Check if error is due to RLS policy violation
+        if (error.message.includes('policy') || error.message.includes('permission')) {
+          toast.error('You do not have permission to perform this action');
+          return;
+        }
+        throw error;
+      }
       await loadCart();
       toast.success('Cart updated');
     } catch (error) {
@@ -217,13 +244,21 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
+      // Security: RLS policy ensures user can only delete their own cart items
       const { error } = await supabase
         .from(TABLES.CART)
         .delete()
-        .eq('user_id', user.id)
+        .eq('user_id', user.id) // RLS policy will verify this matches auth.uid()
         .eq('product_id', productId);
 
-      if (error) throw error;
+      if (error) {
+        // Check if error is due to RLS policy violation
+        if (error.message.includes('policy') || error.message.includes('permission')) {
+          toast.error('You do not have permission to perform this action');
+          return;
+        }
+        throw error;
+      }
       await loadCart();
       toast.success('Removed from cart');
     } catch (error) {
@@ -241,9 +276,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
+      // Security: RLS policy ensures user can only delete their own cart items
       const { error } = await supabase.from(TABLES.CART).delete().eq('user_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        // Check if error is due to RLS policy violation
+        if (error.message.includes('policy') || error.message.includes('permission')) {
+          toast.error('You do not have permission to perform this action');
+          return;
+        }
+        throw error;
+      }
       setCartItems([]);
       toast.success('Cart cleared');
     } catch (error) {

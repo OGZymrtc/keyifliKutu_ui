@@ -4,7 +4,7 @@ import { motion, useAnimation } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Search, Gift, Volume2, VolumeX, Settings } from 'lucide-react';
+import { Search, Gift, Volume2, VolumeX } from 'lucide-react';
 import { Activity, Product, getActivities, getFeaturedProducts } from '../lib/supabase';
 import { useCart } from '../contexts/CartContext';
 import { useFavorites } from '../contexts/FavoriteContext';
@@ -168,16 +168,6 @@ export default function Home() {
         >
           {isMuted ? <VolumeX className="h-6 w-6" /> : <Volume2 className="h-6 w-6" />}
         </button>
-
-        {/* 🔧 Admin Panel Button */}
-        <Link to="/admin">
-          <button
-            className="absolute bottom-6 left-6 z-20 bg-white/60 hover:bg-white/80 text-gray-900 rounded-full p-3 transition"
-            title="Admin Panel"
-          >
-            <Settings className="h-6 w-6" />
-          </button>
-        </Link>
       </section>
 
       {/* 🔍 Search Block */}

@@ -23,7 +23,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { ShoppingCart, Heart, User, Menu, X, Trash2 } from 'lucide-react';
+import { ShoppingCart, Heart, User, Menu, X, Trash2, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { useFavorites } from '../contexts/FavoriteContext';
@@ -32,7 +32,7 @@ import { toast } from 'sonner';
 
 export const Navbar: React.FC = () => {
   const navigate = useNavigate();
-  const { user, signIn, signUp, signInWithGoogle, signOut } = useAuth();
+  const { user, isAdmin, signIn, signUp, signInWithGoogle, signOut } = useAuth();
   const { getCartCount, cartItems, removeFromCart, getCartTotal } = useCart();
   const { favorites, removeFromFavorites } = useFavorites();
   const [authOpen, setAuthOpen] = useState(false);
@@ -260,6 +260,15 @@ export const Navbar: React.FC = () => {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => navigate('/favorites')}>Favoriler</DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate('/cart')}>Sepet</DropdownMenuItem>
+                    {isAdmin && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => navigate('/admin')}>
+                          <Settings className="h-4 w-4 mr-2" />
+                          Panel
+                        </DropdownMenuItem>
+                      </>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={signOut}>Çıkış Yap</DropdownMenuItem>
                   </DropdownMenuContent>

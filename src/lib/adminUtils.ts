@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
-import { supabase, TABLES } from './supabase';
+import { supabase, TABLES, isAdmin } from './supabase';
+import { toast } from 'sonner';
 
 export interface BulkUploadResult {
   success: number;
@@ -235,6 +236,13 @@ export const parseFile = async (file: File): Promise<unknown[]> => {
 
 // Bulk upload activities
 export const bulkUploadActivities = async (data: unknown[]): Promise<BulkUploadResult> => {
+  // Security: Check admin access
+  const adminCheck = await isAdmin();
+  if (!adminCheck) {
+    toast.error('You do not have permission to perform this action');
+    return { success: 0, failed: 0, errors: ['Access denied: Admin privileges required'] };
+  }
+
   const result: BulkUploadResult = { success: 0, failed: 0, errors: [] };
 
   for (const item of data) {
@@ -264,6 +272,13 @@ export const bulkUploadActivities = async (data: unknown[]): Promise<BulkUploadR
 
 // Bulk upload categories
 export const bulkUploadCategories = async (data: unknown[]): Promise<BulkUploadResult> => {
+  // Security: Check admin access
+  const adminCheck = await isAdmin();
+  if (!adminCheck) {
+    toast.error('You do not have permission to perform this action');
+    return { success: 0, failed: 0, errors: ['Access denied: Admin privileges required'] };
+  }
+
   const result: BulkUploadResult = { success: 0, failed: 0, errors: [] };
 
   for (const item of data) {
@@ -294,6 +309,13 @@ export const bulkUploadCategories = async (data: unknown[]): Promise<BulkUploadR
 
 // Bulk upload activity types
 export const bulkUploadActivityTypes = async (data: unknown[]): Promise<BulkUploadResult> => {
+  // Security: Check admin access
+  const adminCheck = await isAdmin();
+  if (!adminCheck) {
+    toast.error('You do not have permission to perform this action');
+    return { success: 0, failed: 0, errors: ['Access denied: Admin privileges required'] };
+  }
+
   const result: BulkUploadResult = { success: 0, failed: 0, errors: [] };
 
   for (const item of data) {
@@ -325,6 +347,13 @@ export const bulkUploadActivityTypes = async (data: unknown[]): Promise<BulkUplo
 
 // Updated: Bulk upload products with insert/update logic based on ID presence
 export const bulkUploadProducts = async (data: unknown[]): Promise<BulkUploadResult> => {
+  // Security: Check admin access
+  const adminCheck = await isAdmin();
+  if (!adminCheck) {
+    toast.error('You do not have permission to perform this action');
+    return { success: 0, failed: 0, errors: ['Access denied: Admin privileges required'] };
+  }
+
   const result: BulkUploadResult = { success: 0, failed: 0, errors: [] };
 
   for (const item of data) {

@@ -6,6 +6,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isAdmin: boolean;
   signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signInWithGoogle: () => Promise<{ error: AuthError | null }>;
@@ -18,12 +19,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  const checkAdminStatus = (currentSession: Session | null) => {
+    if (!currentSession?.user) {
+      setIsAdmin(false);
+      return;
+    }
+    // Check role from user_metadata or app_metadata (matches RLS policy)
+    const role = currentSession.user.user_metadata?.role || currentSession.user.app_metadata?.role;
+    setIsAdmin(role === 'admin');
+  };
 
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      checkAdminStatus(session);
       setLoading(false);
     });
 
@@ -33,6 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      checkAdminStatus(session);
       setLoading(false);
     });
 
@@ -73,6 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     session,
     loading,
+    isAdmin,
     signUp,
     signIn,
     signInWithGoogle,

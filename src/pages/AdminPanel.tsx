@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, Download, ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
+import { Upload, Download, ArrowLeft, CheckCircle, XCircle, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   generateTemplate,
   parseFile,
@@ -18,8 +19,62 @@ import {
 
 export default function AdminPanel() {
   const navigate = useNavigate();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<BulkUploadResult | null>(null);
+
+  // Security: Check admin access
+  useEffect(() => {
+    if (authLoading) return;
+    
+    if (!user) {
+      toast.error('You must be logged in to access the admin panel');
+      navigate('/');
+      return;
+    }
+    
+    if (!isAdmin) {
+      toast.error('You do not have permission to access the admin panel');
+      navigate('/');
+      return;
+    }
+  }, [user, isAdmin, authLoading, navigate]);
+
+  // Show loading or access denied
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user || !isAdmin) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardHeader>
+            <div className="flex items-center gap-2 text-red-600 mb-2">
+              <ShieldAlert className="h-6 w-6" />
+              <CardTitle>Access Denied</CardTitle>
+            </div>
+            <CardDescription>
+              You do not have permission to access this page. Only administrators can access the admin panel.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => navigate('/')} className="w-full">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Home
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,

@@ -91,16 +91,27 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       const parsed: LocalFavoriteItem[] = JSON.parse(localFavorites);
       for (const item of parsed) {
-        await supabase.from(TABLES.FAVORITES).upsert({
-          user_id: user.id,
+        // Security: RLS policy ensures user_id matches auth.uid()
+        const { error } = await supabase.from(TABLES.FAVORITES).upsert({
+          user_id: user.id, // RLS policy will verify this matches auth.uid()
           product_id: item.product_id,
         }, { onConflict: 'user_id,product_id' });
+        
+        if (error) {
+          // Check if error is due to RLS policy violation
+          if (error.message.includes('policy') || error.message.includes('permission')) {
+            console.error('Permission denied while syncing favorites:', error);
+            continue; // Skip this item and continue with others
+          }
+          throw error;
+        }
       }
       localStorage.removeItem(FAVORITES_STORAGE_KEY);
       await loadFavorites();
       toast.success('Favorites synced successfully');
     } catch (error) {
       console.error('Error syncing favorites:', error);
+      toast.error('Failed to sync favorites');
     }
   };
 
@@ -138,12 +149,20 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
 
     try {
+      // Security: RLS policy ensures user_id matches auth.uid()
       const { error } = await supabase.from(TABLES.FAVORITES).insert({
-        user_id: user.id,
+        user_id: user.id, // RLS policy will verify this matches auth.uid()
         product_id: productId,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Check if error is due to RLS policy violation
+        if (error.message.includes('policy') || error.message.includes('permission')) {
+          toast.error('You do not have permission to perform this action');
+          return;
+        }
+        throw error;
+      }
       await loadFavorites();
       toast.success('Added to favorites');
     } catch (error) {
@@ -166,13 +185,21 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
 
     try {
+      // Security: RLS policy ensures user can only delete their own favorites
       const { error } = await supabase
         .from(TABLES.FAVORITES)
         .delete()
-        .eq('user_id', user.id)
+        .eq('user_id', user.id) // RLS policy will verify this matches auth.uid()
         .eq('product_id', productId);
 
-      if (error) throw error;
+      if (error) {
+        // Check if error is due to RLS policy violation
+        if (error.message.includes('policy') || error.message.includes('permission')) {
+          toast.error('You do not have permission to perform this action');
+          return;
+        }
+        throw error;
+      }
       await loadFavorites();
       toast.success('Removed from favorites');
     } catch (error) {
