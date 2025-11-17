@@ -352,7 +352,7 @@ export const Navbar: React.FC = () => {
                     <span className="bg-white px-2 text-gray-500">Ya da şu şekilde devam et</span>
                   </div>
                 </div>
-                <Button type="button" variant="outline" className="w-full" onClick={handleGoogleSignIn}>
+                <Button type="button" variant="outline" className="w-full" onClick={handleSignIn}>
                   Google
                 </Button>
               </form>
